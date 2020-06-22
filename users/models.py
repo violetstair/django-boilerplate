@@ -1,7 +1,15 @@
 import re
+import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+
+GENDER_CHOICE = (
+    ('Male', 'Male'),
+    ('Female', 'Female'),
+    ('Other', 'Other'),
+    ('None', 'None'),
+)
 
 
 class UserManager(BaseUserManager):
@@ -9,12 +17,15 @@ class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def create_user(self, email, username, password=None):
+        # email 검증
         if not email or email != self.normalize_email(email):
             raise ValueError('failed email validate check')
 
-        if re.findall(r'([A-Z|a-z]+)', username)[0] != username:
+        # username 검증
+        if re.findall(r'([A-Z|a-z|\d]+)', username)[0] != username:
             raise ValueError('failed username validate check')
 
+        # password 검증
         if not re.match(r'(?=[^A-Z]*[A-Z])(?=[^a-z]*[a-z])(?=[^0-9]*[0-9])', password):
             raise ValueError('failed password validate check')
 
@@ -42,12 +53,13 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     object = UserManager()
 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=256, null=False, unique=True, verbose_name='이메일')
     username = models.CharField(max_length=20, null=False, unique=True, verbose_name='사용자이름')
     is_active = models.BooleanField(default=True, verbose_name='활성 계정')
-    is_admin = models.BooleanField(default=True, verbose_name='관리자')
-    is_superuser = models.BooleanField(default=True, verbose_name='최상위 관리자')
-    is_staff = models.BooleanField(default=True, verbose_name='운영자')
+    is_admin = models.BooleanField(default=False, verbose_name='관리자')
+    is_superuser = models.BooleanField(default=False, verbose_name='최상위 관리자')
+    is_staff = models.BooleanField(default=False, verbose_name='운영자')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='가입일')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='최근접속')
 
@@ -62,3 +74,38 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = '회원정보'
         verbose_name_plural = '회원정보목록'
         ordering = ['-created_at']
+
+    @staticmethod
+    def get_user(user_id):
+        return User.object.filter(
+            id=user_id,
+            is_admin=False,
+            is_superuser=False,
+            is_staff=False,
+        )
+
+
+class Profile(models.Model):
+    user = models.ForeignKey('User', on_delete=models.CASCADE, verbose_name='회원')
+    address = models.CharField(max_length=512, null=False, unique=True, verbose_name='주소')
+    birthday = models.DateField(verbose_name='생년월일')
+    phone = models.CharField(max_length=13, verbose_name='전화번호')
+    gender = models.CharField(max_length=20, verbose_name='성별', choices=GENDER_CHOICE, default='None')
+
+    class Meta:
+        db_table = 'profiles'
+        verbose_name = '회원 상세정보'
+        verbose_name_plural = '회원 상세정보 목록'
+
+    @staticmethod
+    def update_profile(user_id, address=None, birthday=None, phone=None, gender=None):
+        user = User.object.get(id=user_id)
+        profile = Profile(
+            user=user,
+            address=address,
+            birthday=birthday,
+            phone=phone,
+            gender=gender,
+        )
+        profile.save()
+        return profile
