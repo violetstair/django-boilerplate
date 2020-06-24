@@ -11,5 +11,6 @@ urlpatterns = [
     path(r'', CreateAPIView.as_view(), name='가입'),
     path(r'signin/', jwt_views.TokenObtainPairView.as_view(), name='signin'),
     path(r'refresh/', jwt_views.TokenRefreshView.as_view(), name='refresh'),
+    path(r'verify/', jwt_views.TokenVerifyView.as_view(), name='verify'),
     path(r'<str:pk>/', DetailViewAPI.as_view(), name='계정 정보'),
 ]
