@@ -19,7 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
-        user = User.object.create_user(**validated_data)
+        user = User.objects.create_user(**validated_data)
         return user
 
     class Meta:

@@ -11,14 +11,16 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import datetime
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', 'SECRET_KEY')
 
-if os.getenv('PRODUCT') == 'prod':
+if os.getenv('PRODUCT', 'PRODUCT') == 'prod':
     DEBUG = False
     ALLOWED_HOSTS = [
         '120.0.0.1',
@@ -39,7 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 INSTALLED_APPS += [
-    'users'
+    'users',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -53,6 +55,23 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+JWT_AUTH = {
+    'JWT_SECRET_KEY': SECRET_KEY,
+    'JWT_ALGORITHM': 'HS256',
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300),
+    'JWT_ALLOW_REFRESH': True,
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),
+}
 
 ROOT_URLCONF = 'boilerplate.urls'
 
@@ -79,11 +98,11 @@ WSGI_APPLICATION = 'boilerplate.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DATABASE_DB'),
-        'USER': os.getenv('DATABASE_USER'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST': os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DATABASE_PORT'),
+        'NAME': os.getenv('DATABASE_DB', 'DATABASE_DB'),
+        'USER': os.getenv('DATABASE_USER', 'DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', 'DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST', 'DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT', 'DATABASE_PORT'),
     }
 }
 

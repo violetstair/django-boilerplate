@@ -50,8 +50,8 @@ class UserManager(BaseUserManager):
         return user
 
 
-class User(AbstractBaseUser, PermissionsMixin):
-    object = UserManager()
+class User(AbstractBaseUser, PermissionsMixin, models.Model):
+    objects = UserManager()
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=256, null=False, unique=True, verbose_name='이메일')
@@ -72,40 +72,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = 'accounts'
         verbose_name = '회원정보'
-        verbose_name_plural = '회원정보목록'
+        verbose_name_plural = '회원목록'
         ordering = ['-created_at']
 
     @staticmethod
     def get_user(user_id):
-        return User.object.filter(
+        return User.objects.filter(
             id=user_id,
             is_admin=False,
             is_superuser=False,
             is_staff=False,
         )
-
-
-class Profile(models.Model):
-    user = models.ForeignKey('User', on_delete=models.CASCADE, verbose_name='회원')
-    address = models.CharField(max_length=512, null=False, unique=True, verbose_name='주소')
-    birthday = models.DateField(verbose_name='생년월일')
-    phone = models.CharField(max_length=13, verbose_name='전화번호')
-    gender = models.CharField(max_length=20, verbose_name='성별', choices=GENDER_CHOICE, default='None')
-
-    class Meta:
-        db_table = 'profiles'
-        verbose_name = '회원 상세정보'
-        verbose_name_plural = '회원 상세정보 목록'
-
-    @staticmethod
-    def update_profile(user_id, address=None, birthday=None, phone=None, gender=None):
-        user = User.object.get(id=user_id)
-        profile = Profile(
-            user=user,
-            address=address,
-            birthday=birthday,
-            phone=phone,
-            gender=gender,
-        )
-        profile.save()
-        return profile

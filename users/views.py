@@ -1,14 +1,24 @@
 from rest_framework import generics, mixins
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+)
+
 
 from .serializers import (
     UserCreateSerializer,
     UserSerializer,
 )
-from .models import User
+from .models import (
+    User,
+)
+from .permissions import (
+    IsOwner,
+)
 
 
-class CreateAPIView(mixins.CreateModelMixin, generics.GenericAPIView):
-
+class CreateAPIView(generics.GenericAPIView, mixins.CreateModelMixin):
+    permission_classes = (AllowAny, )
     serializer_class = UserCreateSerializer
 
     def post(self, request, *args, **kwargs):
@@ -16,6 +26,8 @@ class CreateAPIView(mixins.CreateModelMixin, generics.GenericAPIView):
 
 
 class DetailViewAPI(generics.GenericAPIView, mixins.RetrieveModelMixin):
+    permission_classes = (IsOwner,)
+
     serializer_class = UserSerializer
 
     def get_queryset(self):
