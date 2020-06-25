@@ -2,7 +2,7 @@ import re
 import uuid
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
+from django.db import models, transaction
 
 GENDER_CHOICE = (
     ('Male', 'Male'),
@@ -83,3 +83,76 @@ class User(AbstractBaseUser, PermissionsMixin, models.Model):
             is_superuser=False,
             is_staff=False,
         )
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        to='User',
+        on_delete=models.DO_NOTHING,
+        primary_key=True,
+        related_name='user_profile',
+        verbose_name='사용자'
+    )
+    nickname = models.CharField(max_length=64, null=False, verbose_name='별명')
+    bio = models.TextField(max_length=512, null=True, blank=True, verbose_name='자기소개')
+    address = models.CharField(max_length=256, null=True, blank=True, verbose_name='주소')
+    birthday = models.DateField(null=True, verbose_name='생일')
+    gender = models.CharField(max_length=20, verbose_name='성별', choices=GENDER_CHOICE, default='None')
+    phone = models.CharField(max_length=13, null=True, blank=True, verbose_name='전화번호')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='추가일')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='마지막 수정')
+
+    def __str__(self):
+        return f'{self.user.username}:{self.nickname}'
+
+    class Meta:
+        db_table = 'profiles'
+        verbose_name = '프로필'
+        verbose_name_plural = '프로필목록'
+        ordering = ['user']
+
+    @staticmethod
+    def create_profile(data):
+        profile = Profile(
+            user=data['user'],
+            nickname=data['nickname'],
+            bio=data['bio'],
+            address=data['address'],
+            birthday=data['birthday'],
+            gender=data['gender'],
+            phone=data['phone'],
+        )
+        profile.save()
+        return profile
+
+    @staticmethod
+    def update_profile(instance, data):
+        profile = Profile.objects.get(user=data['user'])
+
+        if instance.nickname != data['nickname']:
+            profile.update(nickname=data['nickname'])
+
+        if instance.bio != data['bio']:
+            profile.bio = data['bio']
+
+        if instance.address != data['address']:
+            profile.address = data['address']
+
+        if instance.birthday != data['birthday']:
+            profile.birthday = data['birthday']
+
+        if instance.gender != data['gender']:
+            profile.gender = data['gender']
+
+        if instance.phone != data['phone']:
+            profile.phone = data['phone']
+
+        profile.save()
+        return profile
+
+    @staticmethod
+    def get_profile(user_id):
+        profile = Profile.objects.filter(
+            user=user_id,
+        ).first()
+        return profile
