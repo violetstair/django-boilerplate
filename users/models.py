@@ -130,7 +130,7 @@ class Profile(models.Model):
         profile = Profile.objects.get(user=data['user'])
 
         if instance.nickname != data['nickname']:
-            profile.update(nickname=data['nickname'])
+            profile.nickname=data['nickname']
 
         if instance.bio != data['bio']:
             profile.bio = data['bio']
